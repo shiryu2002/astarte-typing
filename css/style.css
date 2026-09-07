@@ -67,6 +67,8 @@ h1 .sub {
 .controls label { color: var(--muted); }
 .controls .spacer { flex: 1; }
 .controls .chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.controls .volume input[type="range"] { width: 90px; accent-color: var(--accent); cursor: pointer; }
+.controls .volume-value { min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
 
 select, button, input[type="text"], input:not([type]) {
   font: inherit;

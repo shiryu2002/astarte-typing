@@ -1,6 +1,7 @@
 // アプリ本体。状態（state）と UI 更新をここで束ねる。判定ロジックは targets/romaji、描画は keyboard に委譲。
 import { createLayout, validateLayoutRows, DEFAULT_LAYOUT_ROWS, FINGER_LABEL } from './layout.js';
 import { createKeyboard } from './keyboard.js';
+import { createSounds } from './sound.js';
 import { PlainTarget, RomajiTarget } from './targets.js';
 import { RunStats, saveBestIfBetter } from './stats.js';
 import { STAGES, lessonWords, shuffle } from './lessons.js';
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS = {
   showFingers: true,
   convert: true,
   endless: true,
+  volume: 50, // 効果音 0..100
   layoutRows: DEFAULT_LAYOUT_ROWS,
   mode: 'ja-sentences',
   lessonStage: 'home',
@@ -37,6 +39,7 @@ const state = {
   settings: loadSettings(),
   layout: null,
   keyboard: null,
+  sounds: null,
   run: null, // { items, index, stats, finished, modeKey, modeLabel }
   timer: null,
 };
@@ -74,6 +77,8 @@ const dom = {
   showFingers: $('#opt-fingers'),
   convert: $('#opt-convert'),
   endless: $('#opt-endless'),
+  volume: $('#opt-volume'),
+  volumeValue: $('#opt-volume-value'),
   layoutToggle: $('#layout-toggle'),
   layoutPanel: $('#layout-panel'),
   layoutRows: [$('#row0'), $('#row1'), $('#row2')],
@@ -195,6 +200,8 @@ function handleChar(char, physicalKey) {
   const ok = result !== 'miss';
   run.stats.record(expected, ok);
   state.keyboard.flash(physicalKey, ok, { space: char === ' ' });
+  if (ok) state.sounds.hit();
+  else state.sounds.miss();
   if (!ok) {
     dom.text.classList.remove('shake');
     void dom.text.offsetWidth;
@@ -369,6 +376,9 @@ function applySettingsToUi() {
   dom.showFingers.checked = s.showFingers;
   dom.convert.checked = s.convert;
   dom.endless.checked = s.endless;
+  dom.volume.value = s.volume;
+  dom.volumeValue.textContent = s.volume;
+  state.sounds.setVolume(s.volume / 100);
   s.layoutRows.forEach((r, i) => (dom.layoutRows[i].value = r));
   state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers });
 }
@@ -417,6 +427,16 @@ function bindUi() {
   dom.convert.addEventListener('change', () => {
     state.settings.convert = dom.convert.checked;
     saveSettings();
+  });
+  dom.volume.addEventListener('input', () => {
+    state.settings.volume = Number(dom.volume.value);
+    dom.volumeValue.textContent = state.settings.volume;
+    state.sounds.setVolume(state.settings.volume / 100);
+  });
+  dom.volume.addEventListener('change', () => {
+    saveSettings();
+    state.sounds.hit(); // 音量の確認用に一度鳴らす
+    dom.volume.blur();
   });
   dom.endless.addEventListener('change', () => {
     state.settings.endless = dom.endless.checked;
@@ -489,6 +509,7 @@ function onKeyDown(e) {
 function init() {
   state.layout = createLayout(state.settings.layoutRows);
   state.keyboard = createKeyboard(dom.keyboard, state.layout);
+  state.sounds = createSounds(state.settings.volume / 100);
   for (const s of STAGES) {
     const o = document.createElement('option');
     o.value = s.id;
