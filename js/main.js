@@ -9,7 +9,8 @@ import { EN_SENTENCES } from './corpus/en-sentences.js';
 import { JA_WORDS } from './corpus/ja-words.js';
 import { JA_SENTENCES } from './corpus/ja-sentences.js';
 
-const SETTINGS_KEY = 'astarte-typing:settings';
+// 既定値を変えたら版を上げる（古い保存値を引き継がないため）
+const SETTINGS_KEY = 'astarte-typing:settings:v2';
 
 const MODES = {
   lesson: { label: 'レッスン（段階ドリル）', count: 12 },
@@ -26,7 +27,7 @@ const DEFAULT_SETTINGS = {
   layoutRows: DEFAULT_LAYOUT_ROWS,
   mode: 'lesson',
   lessonStage: 'home',
-  lessonLang: 'en',
+  lessonLang: 'ja',
 };
 
 // ---- 状態 -------------------------------------------------------------------
@@ -399,9 +400,12 @@ function bindUi() {
   dom.layoutReset.addEventListener('click', () => applyLayout(DEFAULT_LAYOUT_ROWS));
   dom.resultAgain.addEventListener('click', startRun);
   dom.resultClose.addEventListener('click', hideResult);
-  // select や button にフォーカスが残っていると入力を奪うので外す
-  for (const e of [dom.mode, dom.stage, dom.lang, dom.restart, dom.showQwerty, dom.showFingers, dom.convert, dom.layoutToggle]) {
+  // フォーカスが残っていると入力を奪うので外す。
+  // select は click で blur するとプルダウンが即閉じるので change のみ。
+  for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.convert]) {
     e.addEventListener('change', () => e.blur());
+  }
+  for (const e of [dom.restart, dom.layoutToggle]) {
     e.addEventListener('click', () => e.blur());
   }
 }
