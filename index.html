@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>Astarte Typing <span class="sub">QWERTY入力 → Astarte改 配列練習</span></h1>
+    <h1>Astarte Typing <span class="sub">QWERTY入力 → <span id="layout-name">Astarte 改</span> 配列練習</span></h1>
     <div class="controls">
       <label>モード <select id="mode"></select></label>
       <span id="lesson-opts" hidden>
@@ -35,7 +35,11 @@
       <button id="layout-toggle" type="button" class="ghost-btn extra">配列を編集</button>
     </div>
     <div id="layout-panel" class="layout-panel" hidden>
-      <p>各行10文字（a-z , . ; / ' - [ ]）。物理キーは上から QWERTY / ASDF / ZXCV 段に対応。</p>
+      <p>
+        プリセット
+        <select id="layout-preset"><option value="">（カスタム）</option></select>
+        ／ 各行10文字（a-z , . ; / ' - [ ]）。物理キーは上から QWERTY / ASDF / ZXCV 段に対応。
+      </p>
       <div class="layout-inputs">
         <input id="row0" maxlength="10" spellcheck="false" autocomplete="off">
         <input id="row1" maxlength="10" spellcheck="false" autocomplete="off">

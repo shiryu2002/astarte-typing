@@ -23,7 +23,7 @@ Z X C V ; M L F B /
 - エンドレスモード（既定）: お題が尽きても続く。`Esc` で終了して結果を見る
 - 正解 / ミスの効果音（Web Audio で合成）。ヘッダーの音量スライダーで調整、設定は保存
 - KPM・正確率・ミス数の計測、苦手キーの表示、モード別自己ベスト（localStorage）
-- 配列を画面上で編集して別の配列も練習可能
+- 配列を画面上で編集して別の配列も練習可能。プリセット: Astarte 改 / Astarte（オリジナル 2018）/ 大西配列 / Eucalyn / Colemak / Colemak-DH / Workman / Dvorak / QWERTY
 
 ## 使い方
 

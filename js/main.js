@@ -1,5 +1,5 @@
 // アプリ本体。状態（state）と UI 更新をここで束ねる。判定ロジックは targets/romaji、描画は keyboard に委譲。
-import { createLayout, validateLayoutRows, DEFAULT_LAYOUT_ROWS, FINGER_LABEL } from './layout.js';
+import { createLayout, validateLayoutRows, DEFAULT_LAYOUT_ROWS, LAYOUT_PRESETS, layoutNameFor, FINGER_LABEL } from './layout.js';
 import { createKeyboard } from './keyboard.js';
 import { createSounds } from './sound.js';
 import { PlainTarget, RomajiTarget } from './targets.js';
@@ -84,6 +84,8 @@ const dom = {
   layoutToggle: $('#layout-toggle'),
   layoutPanel: $('#layout-panel'),
   layoutRows: [$('#row0'), $('#row1'), $('#row2')],
+  layoutPreset: $('#layout-preset'),
+  layoutName: $('#layout-name'),
   layoutApply: $('#layout-apply'),
   layoutReset: $('#layout-reset'),
   layoutError: $('#layout-error'),
@@ -386,6 +388,9 @@ function applySettingsToUi() {
   dom.volumeValue.textContent = s.volume;
   state.sounds.setVolume(s.volume / 100);
   s.layoutRows.forEach((r, i) => (dom.layoutRows[i].value = r));
+  const preset = LAYOUT_PRESETS.find((p) => p.rows.every((r, i) => r === s.layoutRows[i]));
+  dom.layoutPreset.value = preset ? preset.id : '';
+  dom.layoutName.textContent = layoutNameFor(s.layoutRows);
   state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers, hideLabels: s.hideLabels });
 }
 
@@ -462,6 +467,10 @@ function bindUi() {
   });
   dom.settingsToggle.addEventListener('click', () => {
     dom.controls.classList.toggle('show-extra');
+  });
+  dom.layoutPreset.addEventListener('change', () => {
+    const preset = LAYOUT_PRESETS.find((p) => p.id === dom.layoutPreset.value);
+    if (preset) applyLayout(preset.rows);
   });
   dom.layoutApply.addEventListener('click', () => {
     applyLayout(dom.layoutRows.map((i) => i.value.trim().toLowerCase()));
@@ -549,6 +558,12 @@ function init() {
     o.value = s.id;
     o.textContent = s.label;
     dom.stage.appendChild(o);
+  }
+  for (const p of LAYOUT_PRESETS) {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.name;
+    dom.layoutPreset.appendChild(o);
   }
   for (const [id, m] of Object.entries(MODES)) {
     const o = document.createElement('option');

@@ -5,6 +5,26 @@ export const LAYOUT_NAME = 'Astarte 改';
 // 練習対象の配列（Astarte改）。行ごとに10文字。
 export const DEFAULT_LAYOUT_ROWS = ['qpuy,jdhgw', 'ioea.ktnsr', 'zxcv;mlfb/'];
 
+// 配列プリセット。上から QWERTY / ASDF / ZXCV 段の物理位置に対応する10文字ずつ。
+export const LAYOUT_PRESETS = [
+  { id: 'astarte-mod', name: 'Astarte 改', rows: DEFAULT_LAYOUT_ROWS },
+  // 作者 Neinvalli 氏の 2018 年記事に添付された Keyboard Layout Analyzer 用 JSON より
+  { id: 'astarte', name: 'Astarte（オリジナル 2018）', rows: ['qpuy,jdhgw', 'ioea.ktnsr', 'zx-c/mlfbv'] },
+  { id: 'onishi', name: '大西配列', rows: ['qlu,.fwryp', 'eiao-ktnsh', 'zxcv;gdmjb'] },
+  { id: 'eucalyn', name: 'Eucalyn 配列', rows: ['qw,.;mrdyp', 'aoeiugtksn', 'zxcvfbhjl/'] },
+  { id: 'colemak', name: 'Colemak', rows: ['qwfpgjluy;', 'arstdhneio', 'zxcvbkm,./'] },
+  { id: 'colemak-dh', name: 'Colemak-DH', rows: ['qwfpbjluy;', 'arstgmneio', 'zxcdvkh,./'] },
+  { id: 'workman', name: 'Workman', rows: ['qdrwbjfup;', 'ashtgyneoi', 'zxmcvkl,./'] },
+  { id: 'dvorak', name: 'Dvorak', rows: ["',.pyfgcrl", 'aoeuidhtns', ';qjkxbmwvz'] },
+  { id: 'qwerty', name: 'QWERTY', rows: ['qwertyuiop', 'asdfghjkl;', 'zxcvbnm,./'] },
+];
+
+/** 配列文字列に一致するプリセット名。無ければ「カスタム」。 */
+export function layoutNameFor(rows) {
+  const hit = LAYOUT_PRESETS.find((p) => p.rows.every((r, i) => r === rows[i]));
+  return hit ? hit.name : 'カスタム';
+}
+
 // 同じ物理位置の QWERTY 文字（キー上の副ラベル用）
 export const QWERTY_ROWS = ['qwertyuiop', 'asdfghjkl;', 'zxcvbnm,./'];
 
@@ -16,7 +36,7 @@ const CODE_ROWS = [
 ];
 
 // 記号キーの Shift 面（QWERTY と同じ対応を採用）
-export const SHIFTED_SYMBOL = { ',': '<', '.': '>', ';': ':', '/': '?' };
+export const SHIFTED_SYMBOL = { ',': '<', '.': '>', ';': ':', '/': '?', "'": '"', '-': '_', '[': '{', ']': '}' };
 const BASE_OF_SHIFTED = Object.fromEntries(
   Object.entries(SHIFTED_SYMBOL).map(([base, shifted]) => [shifted, base]),
 );
