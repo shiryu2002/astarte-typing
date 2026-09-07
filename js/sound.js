@@ -1,11 +1,8 @@
 // 効果音（Web Audio API で合成。音声ファイル不要）。
 // AudioContext はユーザー操作後にしか鳴らせないので、最初の再生時に遅延生成する。
 
-const ATTACK = 0.003; // 立ち上がりを付けてポップノイズを防ぐ
-
 export function createSounds(initialVolume = 0.5) {
   let ctx = null;
-  let master = null;
   let volume = clamp(initialVolume);
   let current = null; // 鳴っている音 { osc, gain }
 
@@ -18,20 +15,30 @@ export function createSounds(initialVolume = 0.5) {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return null;
       ctx = new Ctor();
-      // 複数音が重なっても音量が跳ねないようにコンプレッサを挟む
-      master = ctx.createDynamicsCompressor();
-      master.threshold.value = -24;
-      master.knee.value = 12;
-      master.ratio.value = 6;
-      master.attack.value = 0.001;
-      master.release.value = 0.05;
-      master.connect(ctx.destination);
+      startKeepAlive(ctx);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
 
-  /** 鳴っている音を短く切る。AudioParam.value は自動化中の値を返さないことがあるので読まない。 */
+  /**
+   * ごく小さなノイズを常時流し、出力を「無音」にしない。
+   * 無音が続くと省電力で止まり、次の音の頭が跳ねる/欠ける機器（Bluetooth・一部 DSP）への対策。
+   * 振幅 0.0005（約 -66 dBFS）で聴感上は無音。
+   */
+  function startKeepAlive(ac) {
+    const seconds = 2;
+    const buf = ac.createBuffer(1, ac.sampleRate * seconds, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.0005;
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(ac.destination);
+    src.start();
+  }
+
+  /** 鳴っている音を短く切る（重なって加算されるのを防ぐ）。AudioParam.value は自動化中の値を返さないことがあるので読まない。 */
   function cutCurrent(t0) {
     if (!current) return;
     const { osc, gain } = current;
@@ -56,10 +63,9 @@ export function createSounds(initialVolume = 0.5) {
     osc.frequency.setValueAtTime(freq, t0);
     if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0 + duration);
     const g = peak * volume * volume;
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(g, t0 + ATTACK);
+    gain.gain.setValueAtTime(g, t0);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-    osc.connect(gain).connect(master);
+    osc.connect(gain).connect(ac.destination);
     osc.start(t0);
     osc.stop(t0 + duration + 0.01);
     current = { osc, gain };
@@ -73,9 +79,9 @@ export function createSounds(initialVolume = 0.5) {
     tone({ freq: 1400, type: 'triangle', duration: 0.04, peak: 0.25 });
   }
 
-  /** ミス: 低めの短いビープ（角の立たない三角波） */
+  /** ミス: 低めのビープ */
   function miss() {
-    tone({ freq: 220, type: 'triangle', duration: 0.09, peak: 0.3, freqEnd: 150 });
+    tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 });
   }
 
   function setVolume(v) {
