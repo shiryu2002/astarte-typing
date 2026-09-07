@@ -29,6 +29,15 @@
       <label class="chk"><input type="checkbox" id="opt-fingers"> 指の色分け</label>
       <label class="chk" title="OS側で配列を切り替えている場合はオフ"><input type="checkbox" id="opt-convert"> QWERTY→配列 変換</label>
       <label class="chk volume" title="効果音の音量">🔊 <input type="range" id="opt-volume" min="0" max="100" step="5"> <span id="opt-volume-value" class="volume-value">50</span></label>
+      <label title="ミス音の音色">ミス音
+        <select id="opt-miss-sound">
+          <option value="low">低ビープ</option>
+          <option value="high">高ピッ</option>
+          <option value="double">二連ピピッ</option>
+          <option value="mid">中ブザー</option>
+          <option value="click">クリック（正解音と同系）</option>
+        </select>
+      </label>
       <button id="sound-test" type="button" class="ghost-btn" title="正解→正解→ミス→正解→ミス→ミス→正解 を1秒間隔で再生">♪ 音テスト</button>
       <button id="layout-toggle" type="button" class="ghost-btn">配列を編集</button>
     </div>

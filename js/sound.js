@@ -79,9 +79,26 @@ export function createSounds(initialVolume = 0.5) {
     tone({ freq: 1400, type: 'triangle', duration: 0.04, peak: 0.25 });
   }
 
-  /** ミス: 低めのビープ */
+  // ミス音の候補。低域の矩形波は再生機器の処理を刺激することがあるので、別の音色も選べるようにしている
+  const MISS_SOUNDS = {
+    low: () => tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 }),
+    high: () => tone({ freq: 880, type: 'sine', duration: 0.07, peak: 0.3 }),
+    double: () => {
+      tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 });
+      setTimeout(() => tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 }), 70);
+    },
+    mid: () => tone({ freq: 440, type: 'sawtooth', duration: 0.08, peak: 0.16, freqEnd: 380 }),
+    click: () => tone({ freq: 700, type: 'triangle', duration: 0.04, peak: 0.25 }),
+  };
+  let missSound = 'low';
+
+  /** ミス */
   function miss() {
-    tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 });
+    (MISS_SOUNDS[missSound] ?? MISS_SOUNDS.low)();
+  }
+
+  function setMissSound(name) {
+    missSound = MISS_SOUNDS[name] ? name : 'low';
   }
 
   function setVolume(v) {
@@ -94,5 +111,5 @@ export function createSounds(initialVolume = 0.5) {
     seq.forEach((fn, i) => setTimeout(fn, i * 1000));
   }
 
-  return { hit, miss, setVolume, playTest };
+  return { hit, miss, setVolume, setMissSound, playTest };
 }
