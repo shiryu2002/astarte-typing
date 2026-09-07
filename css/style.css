@@ -382,6 +382,7 @@ kbd {
 .mobile-only { display: none; }
 
 @media (max-width: 720px) {
+  :root { --u-compact: calc((100vw - 22px) / 11.1); }
   .mobile-only { display: inline-block; }
   .desktop-only { display: none; }
   .app-header { padding: 8px 10px 8px; }
@@ -392,7 +393,9 @@ kbd {
   .controls .extra { display: none; }
   .controls.show-extra .extra { display: inline-flex; }
   .controls.show-extra .extra.ghost-btn { display: inline-block; }
-  main { padding: 10px 8px 6px; gap: 10px; }
+  /* キーボードは画面下部に固定。その高さぶん本文の下を空ける */
+  main { padding: 10px 8px calc(var(--u-compact) * 6.4 + 24px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+  .app-footer { display: none; }
   .stat-row { gap: 4px 14px; font-size: 0.8rem; }
   .text { min-height: 6rem; padding: 12px 14px; border-radius: 10px; }
   .ja-display { font-size: 1.15rem; }
@@ -405,11 +408,18 @@ kbd {
 
 /* コンパクト配列（ダミーキーなし・Shift は最下段）。幅は画面いっぱいに */
 .keyboard.compact {
-  --u: calc((100vw - 22px) / 11.1);
+  --u: var(--u-compact, calc((100vw - 22px) / 11.1));
   --gap: calc(var(--u) * 0.1);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   width: 100%;
-  padding: calc(var(--u) * 0.28) calc(var(--u) * 0.2);
-  border-radius: 10px;
+  padding: calc(var(--u) * 0.28) calc(var(--u) * 0.2) calc(var(--u) * 0.28 + env(safe-area-inset-bottom, 0px));
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
 }
 .keyboard.compact .key {
   height: calc(var(--u) * 1.35 - var(--gap));
