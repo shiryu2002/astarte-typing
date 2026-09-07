@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Astarte Typing</title>
+  <meta name="description" content="Astarte改配列の練習用タイピングアプリ。QWERTYキーボードのまま新配列を練習できます。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2323283a'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='%237cc4ff' font-family='monospace' font-weight='bold'>A</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Astarte Typing <span class="sub">QWERTY入力 → Astarte改 配列練習</span></h1>
+    <div class="controls">
+      <label>モード <select id="mode"></select></label>
+      <span id="lesson-opts" hidden>
+        <label>段階 <select id="stage"></select></label>
+        <label>言語
+          <select id="lang">
+            <option value="en">英語</option>
+            <option value="ja">日本語</option>
+          </select>
+        </label>
+      </span>
+      <button id="restart" type="button" title="Enter">↻ やり直す</button>
+      <span class="spacer"></span>
+      <label class="chk"><input type="checkbox" id="opt-qwerty"> QWERTY表記</label>
+      <label class="chk"><input type="checkbox" id="opt-fingers"> 指の色分け</label>
+      <label class="chk" title="OS側で配列を切り替えている場合はオフ"><input type="checkbox" id="opt-convert"> QWERTY→配列 変換</label>
+      <button id="layout-toggle" type="button" class="ghost-btn">配列を編集</button>
+    </div>
+    <div id="layout-panel" class="layout-panel" hidden>
+      <p>各行10文字（a-z , . ; / ' - [ ]）。物理キーは上から QWERTY / ASDF / ZXCV 段に対応。</p>
+      <div class="layout-inputs">
+        <input id="row0" maxlength="10" spellcheck="false" autocomplete="off">
+        <input id="row1" maxlength="10" spellcheck="false" autocomplete="off">
+        <input id="row2" maxlength="10" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="layout-actions">
+        <button id="layout-apply" type="button">適用</button>
+        <button id="layout-reset" type="button" class="ghost-btn">Astarte改に戻す</button>
+        <span id="layout-error" class="error"></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="stats">
+      <div class="progress-wrap">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div class="stat-row">
+        <span>進捗 <b id="progress">-</b></span>
+        <span>時間 <b id="stat-time">0.0s</b></span>
+        <span>KPM <b id="stat-kpm">-</b></span>
+        <span>ミス <b id="stat-miss">0</b></span>
+        <span>正確率 <b id="stat-acc">100.0%</b></span>
+      </div>
+    </section>
+
+    <section id="text" class="text" aria-live="polite"></section>
+
+    <p id="ime-warning" class="ime-warning" hidden>⚠ IME がオンのようです。半角英数に切り替えてください。</p>
+
+    <section id="keyboard" class="keyboard" aria-hidden="true"></section>
+
+    <p id="hint" class="hint">
+      キーは <b>QWERTY の物理位置</b>で押してください（例: 物理 <kbd>W</kbd> を押すと <kbd>P</kbd>）。
+      間違えると進まないので、正しいキーを押し直してください。
+      <kbd>Enter</kbd> 新しいお題 / <kbd>Esc</kbd> やり直し
+    </p>
+  </main>
+
+  <div id="result" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
+      <h2 id="result-title">結果</h2>
+      <div id="result-body"></div>
+      <div class="modal-actions">
+        <button id="result-again" type="button">もう一度（Enter）</button>
+        <button id="result-close" type="button" class="ghost-btn">閉じる（Esc）</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <a href="https://github.com/shiryu2002/astarte-typing" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
