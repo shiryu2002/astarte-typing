@@ -10,7 +10,7 @@ import { JA_WORDS } from './corpus/ja-words.js';
 import { JA_SENTENCES } from './corpus/ja-sentences.js';
 
 // 既定値を変えたら版を上げる（古い保存値を引き継がないため）
-const SETTINGS_KEY = 'astarte-typing:settings:v2';
+const SETTINGS_KEY = 'astarte-typing:settings:v3';
 
 const MODES = {
   lesson: { label: 'レッスン（段階ドリル）', count: 12 },
@@ -24,8 +24,9 @@ const DEFAULT_SETTINGS = {
   showQwerty: true,
   showFingers: true,
   convert: true,
+  endless: true,
   layoutRows: DEFAULT_LAYOUT_ROWS,
-  mode: 'lesson',
+  mode: 'ja-sentences',
   lessonStage: 'home',
   lessonLang: 'ja',
 };
@@ -72,6 +73,7 @@ const dom = {
   showQwerty: $('#opt-qwerty'),
   showFingers: $('#opt-fingers'),
   convert: $('#opt-convert'),
+  endless: $('#opt-endless'),
   layoutToggle: $('#layout-toggle'),
   layoutPanel: $('#layout-panel'),
   layoutRows: [$('#row0'), $('#row1'), $('#row2')],
@@ -96,8 +98,23 @@ const dom = {
 
 // ---- お題生成 ----------------------------------------------------------------
 
-function pick(arr, n) {
-  return shuffle(arr).slice(0, n);
+// コーパスごとにシャッフル済みの山札を持ち、使い切るまで同じお題を出さない
+const decks = new Map();
+function draw(key, pool, n) {
+  let d = decks.get(key);
+  if (!d || d.pool !== pool) {
+    d = { pool, order: shuffle(pool), pos: 0 };
+    decks.set(key, d);
+  }
+  const out = [];
+  while (out.length < n) {
+    if (d.pos >= d.order.length) {
+      d.order = shuffle(pool);
+      d.pos = 0;
+    }
+    out.push(d.order[d.pos++]);
+  }
+  return out;
 }
 
 function chunk(arr, size) {
@@ -117,28 +134,30 @@ function buildItems() {
       return chunk(words, 6).map((ws) => new PlainTarget(ws.join(' ')));
     }
     case 'en-words':
-      return chunk(pick(EN_WORDS, cfg.count), cfg.perLine).map((ws) => new PlainTarget(ws.join(' ')));
+      return chunk(draw(mode, EN_WORDS, cfg.count), cfg.perLine).map((ws) => new PlainTarget(ws.join(' ')));
     case 'en-sentences':
-      return pick(EN_SENTENCES, cfg.count).map((s) => new PlainTarget(s));
+      return draw(mode, EN_SENTENCES, cfg.count).map((s) => new PlainTarget(s));
     case 'ja-words':
-      return pick(JA_WORDS, cfg.count).map((w) => new RomajiTarget(w));
+      return draw(mode, JA_WORDS, cfg.count).map((w) => new RomajiTarget(w));
     case 'ja-sentences':
-      return pick(JA_SENTENCES, cfg.count).map((s) => new RomajiTarget(s));
+      return draw(mode, JA_SENTENCES, cfg.count).map((s) => new RomajiTarget(s));
     default:
       throw new Error(`unknown mode: ${mode}`);
   }
 }
 
 function modeKey() {
-  const { mode, lessonStage, lessonLang } = state.settings;
-  return mode === 'lesson' ? `lesson:${lessonStage}:${lessonLang}` : mode;
+  const { mode, lessonStage, lessonLang, endless } = state.settings;
+  const base = mode === 'lesson' ? `lesson:${lessonStage}:${lessonLang}` : mode;
+  return endless ? `${base}:endless` : base;
 }
 
 function modeLabel() {
-  const { mode, lessonStage, lessonLang } = state.settings;
-  if (mode !== 'lesson') return MODES[mode].label;
+  const { mode, lessonStage, lessonLang, endless } = state.settings;
+  const suffix = endless ? '（エンドレス）' : '';
+  if (mode !== 'lesson') return MODES[mode].label + suffix;
   const stage = STAGES.find((s) => s.id === lessonStage) ?? STAGES[0];
-  return `レッスン / ${stage.label} / ${lessonLang === 'ja' ? '日本語' : '英語'}`;
+  return `レッスン / ${stage.label} / ${lessonLang === 'ja' ? '日本語' : '英語'}${suffix}`;
 }
 
 // ---- ラン制御 ----------------------------------------------------------------
@@ -151,6 +170,7 @@ function startRun() {
     index: 0,
     stats: new RunStats(),
     finished: false,
+    endless: state.settings.endless,
     modeKey: modeKey(),
     modeLabel: modeLabel(),
   };
@@ -183,8 +203,11 @@ function handleChar(char, physicalKey) {
   if (result === 'done') {
     run.index += 1;
     if (run.index >= run.items.length) {
-      finishRun();
-      return;
+      if (!run.endless) {
+        finishRun();
+        return;
+      }
+      run.items.push(...buildItems());
     }
   }
   renderAll();
@@ -265,7 +288,8 @@ function progressRatio() {
   const t = run.items[run.index];
   const v = t.view();
   const frac = v.text.length ? v.cursor / v.text.length : 0;
-  return (run.index + frac) / run.items.length;
+  // エンドレスは終わりがないので、今のお題の中での進み具合を出す
+  return run.endless ? frac : (run.index + frac) / run.items.length;
 }
 
 function fmtTime(ms) {
@@ -276,7 +300,9 @@ function renderStats() {
   const run = state.run;
   if (!run) return;
   const s = run.stats;
-  dom.progress.textContent = `${Math.min(run.index + (run.finished ? 0 : 1), run.items.length)} / ${run.items.length}`;
+  dom.progress.textContent = run.endless
+    ? `${run.index} 完了`
+    : `${Math.min(run.index + (run.finished ? 0 : 1), run.items.length)} / ${run.items.length}`;
   dom.progressBar.style.width = `${(progressRatio() * 100).toFixed(1)}%`;
   dom.time.textContent = fmtTime(s.elapsedMs());
   // 計測直後は分母が小さすぎて値が暴れるので 1 秒経つまで伏せる
@@ -342,6 +368,7 @@ function applySettingsToUi() {
   dom.showQwerty.checked = s.showQwerty;
   dom.showFingers.checked = s.showFingers;
   dom.convert.checked = s.convert;
+  dom.endless.checked = s.endless;
   s.layoutRows.forEach((r, i) => (dom.layoutRows[i].value = r));
   state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers });
 }
@@ -391,6 +418,11 @@ function bindUi() {
     state.settings.convert = dom.convert.checked;
     saveSettings();
   });
+  dom.endless.addEventListener('change', () => {
+    state.settings.endless = dom.endless.checked;
+    saveSettings();
+    startRun();
+  });
   dom.layoutToggle.addEventListener('click', () => {
     dom.layoutPanel.hidden = !dom.layoutPanel.hidden;
   });
@@ -402,7 +434,7 @@ function bindUi() {
   dom.resultClose.addEventListener('click', hideResult);
   // フォーカスが残っていると入力を奪うので外す。
   // select は click で blur するとプルダウンが即閉じるので change のみ。
-  for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.convert]) {
+  for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.convert, dom.endless]) {
     e.addEventListener('change', () => e.blur());
   }
   for (const e of [dom.restart, dom.layoutToggle]) {
@@ -433,7 +465,9 @@ function onKeyDown(e) {
   }
   if (e.key === 'Escape') {
     e.preventDefault();
+    const run = state.run;
     if (!dom.result.hidden) hideResult();
+    else if (run && run.endless && run.stats.started && !run.finished) finishRun(); // エンドレスは Esc で締めて結果を見る
     else startRun();
     return;
   }
