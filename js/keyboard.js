@@ -37,6 +37,7 @@ export function createKeyboard(container, initialLayout, { compact = false, onIn
   let spaceEl = null;
   let nextEls = [];
   let shiftArmed = false; // 画面上の Shift をタップした直後（次の1キーだけ Shift 面）
+  let hideLabels = false; // 文字を隠す（ブラインド練習）。次キーのハイライトも出さない
 
   function layoutKey(key, rowIdx) {
     const k = el('div', 'key');
@@ -126,7 +127,7 @@ export function createKeyboard(container, initialLayout, { compact = false, onIn
   /** 次に打つ文字のキーを光らせる。Shift が要る場合は反対の手の Shift も光らせる。 */
   function highlightNext(char) {
     clearNext();
-    if (char === null || char === undefined) return;
+    if (hideLabels || char === null || char === undefined) return;
     const { key, shift, space } = layout.keyForChar(char);
     if (space) {
       spaceEl.classList.add('next');
@@ -156,10 +157,11 @@ export function createKeyboard(container, initialLayout, { compact = false, onIn
     setTimeout(() => target.classList.remove(cls), FLASH_MS);
   }
 
-  function setOptions({ showQwerty, showFingers, hideLabels }) {
+  function setOptions({ showQwerty, showFingers, hideLabels: hide }) {
     container.classList.toggle('show-qwerty', !!showQwerty);
     container.classList.toggle('show-fingers', !!showFingers);
-    container.classList.toggle('hide-labels', !!hideLabels);
+    container.classList.toggle('hide-labels', !!hide);
+    hideLabels = !!hide;
   }
 
   function setLayout(next) {

@@ -204,7 +204,8 @@ function handleChar(char, physicalKey) {
   const ok = result !== 'miss';
   run.stats.record(expected, ok);
   state.keyboard.flash(physicalKey, ok, { space: char === ' ' });
-  if (ok) state.sounds.hit();
+  if (result === 'done') state.sounds.complete();
+  else if (ok) state.sounds.hit();
   else state.sounds.miss();
   if (!ok) {
     dom.text.classList.remove('shake');
@@ -405,6 +406,7 @@ function setHideLabels(v) {
   state.settings.hideLabels = v;
   saveSettings();
   applySettingsToUi();
+  renderAll(); // ハイライトの出し直し/消去
 }
 
 function bindUi() {

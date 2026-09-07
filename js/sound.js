@@ -69,9 +69,15 @@ export function createSounds(initialVolume = 0.5) {
     setTimeout(() => tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 }), 70);
   }
 
+  /** お題完成: 上がる二音のピコン */
+  function complete() {
+    tone({ freq: 880, type: 'sine', duration: 0.09, peak: 0.3 });
+    setTimeout(() => tone({ freq: 1320, type: 'sine', duration: 0.16, peak: 0.3 }), 80);
+  }
+
   function setVolume(v) {
     volume = clamp(v);
   }
 
-  return { hit, miss, setVolume };
+  return { hit, miss, complete, setVolume };
 }
