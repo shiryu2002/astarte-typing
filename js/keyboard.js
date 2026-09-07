@@ -156,9 +156,10 @@ export function createKeyboard(container, initialLayout, { compact = false, onIn
     setTimeout(() => target.classList.remove(cls), FLASH_MS);
   }
 
-  function setOptions({ showQwerty, showFingers }) {
+  function setOptions({ showQwerty, showFingers, hideLabels }) {
     container.classList.toggle('show-qwerty', !!showQwerty);
     container.classList.toggle('show-fingers', !!showFingers);
+    container.classList.toggle('hide-labels', !!hideLabels);
   }
 
   function setLayout(next) {

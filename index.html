@@ -29,6 +29,7 @@
       <span class="spacer"></span>
       <label class="chk extra"><input type="checkbox" id="opt-qwerty"> QWERTY表記</label>
       <label class="chk extra"><input type="checkbox" id="opt-fingers"> 指の色分け</label>
+      <label class="chk extra" title="Tab で切替"><input type="checkbox" id="opt-hide-labels"> キー文字を隠す (Tab)</label>
       <label class="chk extra" title="OS側で配列を切り替えている場合はオフ"><input type="checkbox" id="opt-convert"> QWERTY→配列 変換</label>
       <label class="chk volume extra" title="効果音の音量">🔊 <input type="range" id="opt-volume" min="0" max="100" step="5"> <span id="opt-volume-value" class="volume-value">50</span></label>
       <button id="layout-toggle" type="button" class="ghost-btn extra">配列を編集</button>
@@ -71,7 +72,7 @@
     <p id="hint" class="hint">
       <span class="desktop-only">キーは <b>QWERTY の物理位置</b>で押してください（例: 物理 <kbd>W</kbd> を押すと <kbd>P</kbd>）。画面のキーをクリックしても入力できます。
       間違えると進まないので、正しいキーを押し直してください。
-      <kbd>Enter</kbd> 新しいお題 / <kbd>Esc</kbd> やり直し（エンドレス中は終了して結果表示）</span>
+      <kbd>Enter</kbd> 新しいお題 / <kbd>Esc</kbd> やり直し（エンドレス中は終了して結果表示） / <kbd>Tab</kbd> キー文字を隠す</span>
       <span class="mobile-only">画面のキーをタップして入力します。光っているキーが次に打つキーです。大文字・記号は Shift を先にタップ。</span>
     </p>
   </main>

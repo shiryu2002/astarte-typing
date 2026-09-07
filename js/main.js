@@ -24,6 +24,7 @@ const MODES = {
 const DEFAULT_SETTINGS = {
   showQwerty: true,
   showFingers: true,
+  hideLabels: false, // キーの文字を隠す（Tab で切替）
   convert: true,
   endless: true,
   volume: 50, // 効果音 0..100
@@ -75,6 +76,7 @@ const dom = {
   restart: $('#restart'),
   showQwerty: $('#opt-qwerty'),
   showFingers: $('#opt-fingers'),
+  hideLabels: $('#opt-hide-labels'),
   convert: $('#opt-convert'),
   endless: $('#opt-endless'),
   volume: $('#opt-volume'),
@@ -376,13 +378,14 @@ function applySettingsToUi() {
   dom.lessonOpts.hidden = s.mode !== 'lesson';
   dom.showQwerty.checked = s.showQwerty;
   dom.showFingers.checked = s.showFingers;
+  dom.hideLabels.checked = s.hideLabels;
   dom.convert.checked = s.convert;
   dom.endless.checked = s.endless;
   dom.volume.value = s.volume;
   dom.volumeValue.textContent = s.volume;
   state.sounds.setVolume(s.volume / 100);
   s.layoutRows.forEach((r, i) => (dom.layoutRows[i].value = r));
-  state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers });
+  state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers, hideLabels: s.hideLabels });
 }
 
 function applyLayout(rows) {
@@ -396,6 +399,12 @@ function applyLayout(rows) {
   applySettingsToUi();
   startRun();
   return true;
+}
+
+function setHideLabels(v) {
+  state.settings.hideLabels = v;
+  saveSettings();
+  applySettingsToUi();
 }
 
 function bindUi() {
@@ -426,6 +435,7 @@ function bindUi() {
     saveSettings();
     applySettingsToUi();
   });
+  dom.hideLabels.addEventListener('change', () => setHideLabels(dom.hideLabels.checked));
   dom.convert.addEventListener('change', () => {
     state.settings.convert = dom.convert.checked;
     saveSettings();
@@ -459,7 +469,7 @@ function bindUi() {
   dom.resultClose.addEventListener('click', hideResult);
   // フォーカスが残っていると入力を奪うので外す。
   // select は click で blur するとプルダウンが即閉じるので change のみ。
-  for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.convert, dom.endless]) {
+  for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.hideLabels, dom.convert, dom.endless]) {
     e.addEventListener('change', () => e.blur());
   }
   for (const e of [dom.restart, dom.layoutToggle, dom.settingsToggle]) {
@@ -486,6 +496,11 @@ function onKeyDown(e) {
 
   if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
     showImeWarning();
+    return;
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    setHideLabels(!state.settings.hideLabels); // キーの文字を隠す/出す
     return;
   }
   if (e.key === 'Escape') {

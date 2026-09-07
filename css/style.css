@@ -249,6 +249,10 @@ main {
   display: none;
 }
 .keyboard.show-qwerty .key .qwerty { display: block; }
+/* 文字を隠す（Tab）。visibility なので箱の大きさは変わらずレイアウトは崩れない */
+.keyboard.hide-labels .key[data-code] .main,
+.keyboard.hide-labels .key[data-code] .shifted,
+.keyboard.hide-labels .key[data-code] .qwerty { visibility: hidden; }
 
 .key.ghost, .key.mod, .key.space {
   font-size: calc(var(--u) * 0.22);
