@@ -19,12 +19,26 @@ export function createSounds(initialVolume = 0.5) {
     return ctx;
   }
 
-  /** 単純な減衰トーンを鳴らす。volume は 0..1（聴感に合わせて二乗で適用）。 */
+  // 鳴っている音。次の音と重なると加算されて大きく聞こえるので、新しい音を出す前に切る
+  let current = null;
+
+  function cutCurrent(ac, t0) {
+    if (!current) return;
+    const { osc, gain } = current;
+    gain.gain.cancelScheduledValues(t0);
+    gain.gain.setValueAtTime(gain.gain.value, t0);
+    gain.gain.linearRampToValueAtTime(0, t0 + 0.005);
+    osc.stop(t0 + 0.006);
+    current = null;
+  }
+
+  /** 単純な減衰トーンを鳴らす。volume は 0..1（聴感に合わせて二乗で適用）。同時に1音だけ。 */
   function tone({ freq, type = 'sine', duration, peak = 0.3, freqEnd = null }) {
     if (volume <= 0) return;
     const ac = ensureContext();
     if (!ac) return;
     const t0 = ac.currentTime;
+    cutCurrent(ac, t0);
     const osc = ac.createOscillator();
     const gain = ac.createGain();
     osc.type = type;
@@ -36,6 +50,10 @@ export function createSounds(initialVolume = 0.5) {
     osc.connect(gain).connect(ac.destination);
     osc.start(t0);
     osc.stop(t0 + duration + 0.01);
+    current = { osc, gain };
+    osc.onended = () => {
+      if (current && current.osc === osc) current = null;
+    };
   }
 
   /** 正解: 短く高いクリック音 */
@@ -45,7 +63,7 @@ export function createSounds(initialVolume = 0.5) {
 
   /** ミス: 低めのビープ */
   function miss() {
-    tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 });
+    tone({ freq: 220, type: 'square', duration: 0.09, peak: 0.12, freqEnd: 160 });
   }
 
   function setVolume(v) {
