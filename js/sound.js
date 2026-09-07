@@ -15,27 +15,9 @@ export function createSounds(initialVolume = 0.5) {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return null;
       ctx = new Ctor();
-      startKeepAlive(ctx);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
-  }
-
-  /**
-   * ごく小さなノイズを常時流し、出力を「無音」にしない。
-   * 無音が続くと省電力で止まり、次の音の頭が跳ねる/欠ける機器（Bluetooth・一部 DSP）への対策。
-   * 振幅 0.0005（約 -66 dBFS）で聴感上は無音。
-   */
-  function startKeepAlive(ac) {
-    const seconds = 2;
-    const buf = ac.createBuffer(1, ac.sampleRate * seconds, ac.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.0005;
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    src.loop = true;
-    src.connect(ac.destination);
-    src.start();
   }
 
   /** 鳴っている音を短く切る（重なって加算されるのを防ぐ）。AudioParam.value は自動化中の値を返さないことがあるので読まない。 */
@@ -51,7 +33,7 @@ export function createSounds(initialVolume = 0.5) {
   }
 
   /** 減衰トーンを1音鳴らす。volume は 0..1（聴感に合わせて二乗で適用）。 */
-  function tone({ freq, type = 'sine', duration, peak = 0.3, freqEnd = null }) {
+  function tone({ freq, type = 'sine', duration, peak = 0.3 }) {
     if (volume <= 0) return;
     const ac = ensureContext();
     if (!ac) return;
@@ -61,7 +43,6 @@ export function createSounds(initialVolume = 0.5) {
     const gain = ac.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t0);
-    if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0 + duration);
     const g = peak * volume * volume;
     gain.gain.setValueAtTime(g, t0);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
@@ -79,36 +60,18 @@ export function createSounds(initialVolume = 0.5) {
     tone({ freq: 880, type: 'sine', duration: 0.07, peak: 0.3 });
   }
 
-  // ミス音の候補。低域の矩形波は再生機器の処理を刺激することがあるので、別の音色も選べるようにしている
-  const MISS_SOUNDS = {
-    low: () => tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 }),
-    double: () => {
-      tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 });
-      setTimeout(() => tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 }), 70);
-    },
-    mid: () => tone({ freq: 440, type: 'sawtooth', duration: 0.08, peak: 0.16, freqEnd: 380 }),
-    click: () => tone({ freq: 700, type: 'triangle', duration: 0.04, peak: 0.25 }),
-  };
-  let missSound = 'low';
-
-  /** ミス */
+  /**
+   * ミス: 二連のピピッ。
+   * 低域の矩形波ビープだと、再生環境によって直後の音が大きく聞こえる現象が出たので使わない。
+   */
   function miss() {
-    (MISS_SOUNDS[missSound] ?? MISS_SOUNDS.low)();
-  }
-
-  function setMissSound(name) {
-    missSound = MISS_SOUNDS[name] ? name : 'low';
+    tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 });
+    setTimeout(() => tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 }), 70);
   }
 
   function setVolume(v) {
     volume = clamp(v);
   }
 
-  /** 聞き比べ用: 正解→正解→ミス→正解→ミス→ミス→正解 を 1 秒間隔で鳴らす。 */
-  function playTest() {
-    const seq = [hit, hit, miss, hit, miss, miss, hit];
-    seq.forEach((fn, i) => setTimeout(fn, i * 1000));
-  }
-
-  return { hit, miss, setVolume, setMissSound, playTest };
+  return { hit, miss, setVolume };
 }

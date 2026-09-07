@@ -27,7 +27,6 @@ const DEFAULT_SETTINGS = {
   convert: true,
   endless: true,
   volume: 50, // 効果音 0..100
-  missSound: 'low', // ミス音の音色
   layoutRows: DEFAULT_LAYOUT_ROWS,
   mode: 'ja-sentences',
   lessonStage: 'home',
@@ -80,8 +79,6 @@ const dom = {
   endless: $('#opt-endless'),
   volume: $('#opt-volume'),
   volumeValue: $('#opt-volume-value'),
-  soundTest: $('#sound-test'),
-  missSound: $('#opt-miss-sound'),
   layoutToggle: $('#layout-toggle'),
   layoutPanel: $('#layout-panel'),
   layoutRows: [$('#row0'), $('#row1'), $('#row2')],
@@ -382,8 +379,6 @@ function applySettingsToUi() {
   dom.volume.value = s.volume;
   dom.volumeValue.textContent = s.volume;
   state.sounds.setVolume(s.volume / 100);
-  dom.missSound.value = s.missSound;
-  state.sounds.setMissSound(s.missSound);
   s.layoutRows.forEach((r, i) => (dom.layoutRows[i].value = r));
   state.keyboard.setOptions({ showQwerty: s.showQwerty, showFingers: s.showFingers });
 }
@@ -442,17 +437,6 @@ function bindUi() {
     saveSettings();
     state.sounds.hit(); // 音量の確認用に一度鳴らす
     dom.volume.blur();
-  });
-  dom.missSound.addEventListener('change', () => {
-    state.settings.missSound = dom.missSound.value;
-    saveSettings();
-    state.sounds.setMissSound(state.settings.missSound);
-    state.sounds.miss(); // 確認用に一度鳴らす
-    dom.missSound.blur();
-  });
-  dom.soundTest.addEventListener('click', () => {
-    state.sounds.playTest();
-    dom.soundTest.blur();
   });
   dom.endless.addEventListener('change', () => {
     state.settings.endless = dom.endless.checked;
