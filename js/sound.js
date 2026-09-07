@@ -74,15 +74,14 @@ export function createSounds(initialVolume = 0.5) {
     };
   }
 
-  /** 正解: 短く高いクリック音 */
+  /** 正解: 高めの短いピッ */
   function hit() {
-    tone({ freq: 1400, type: 'triangle', duration: 0.04, peak: 0.25 });
+    tone({ freq: 880, type: 'sine', duration: 0.07, peak: 0.3 });
   }
 
   // ミス音の候補。低域の矩形波は再生機器の処理を刺激することがあるので、別の音色も選べるようにしている
   const MISS_SOUNDS = {
     low: () => tone({ freq: 220, type: 'square', duration: 0.12, peak: 0.18, freqEnd: 160 }),
-    high: () => tone({ freq: 880, type: 'sine', duration: 0.07, peak: 0.3 }),
     double: () => {
       tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 });
       setTimeout(() => tone({ freq: 660, type: 'triangle', duration: 0.045, peak: 0.3 }), 70);
