@@ -79,6 +79,7 @@ const dom = {
   endless: $('#opt-endless'),
   volume: $('#opt-volume'),
   volumeValue: $('#opt-volume-value'),
+  soundTest: $('#sound-test'),
   layoutToggle: $('#layout-toggle'),
   layoutPanel: $('#layout-panel'),
   layoutRows: [$('#row0'), $('#row1'), $('#row2')],
@@ -437,6 +438,10 @@ function bindUi() {
     saveSettings();
     state.sounds.hit(); // 音量の確認用に一度鳴らす
     dom.volume.blur();
+  });
+  dom.soundTest.addEventListener('click', () => {
+    state.sounds.playTest();
+    dom.soundTest.blur();
   });
   dom.endless.addEventListener('change', () => {
     state.settings.endless = dom.endless.checked;

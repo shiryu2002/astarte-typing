@@ -88,5 +88,11 @@ export function createSounds(initialVolume = 0.5) {
     volume = clamp(v);
   }
 
-  return { hit, miss, setVolume };
+  /** 聞き比べ用: 正解→正解→ミス→正解→ミス→ミス→正解 を 1 秒間隔で鳴らす。 */
+  function playTest() {
+    const seq = [hit, hit, miss, hit, miss, miss, hit];
+    seq.forEach((fn, i) => setTimeout(fn, i * 1000));
+  }
+
+  return { hit, miss, setVolume, playTest };
 }
