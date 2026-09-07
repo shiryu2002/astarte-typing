@@ -85,6 +85,8 @@ const dom = {
   layoutApply: $('#layout-apply'),
   layoutReset: $('#layout-reset'),
   layoutError: $('#layout-error'),
+  settingsToggle: $('#settings-toggle'),
+  controls: $('.controls'),
   progress: $('#progress'),
   progressBar: $('#progress-bar'),
   time: $('#stat-time'),
@@ -446,6 +448,9 @@ function bindUi() {
   dom.layoutToggle.addEventListener('click', () => {
     dom.layoutPanel.hidden = !dom.layoutPanel.hidden;
   });
+  dom.settingsToggle.addEventListener('click', () => {
+    dom.controls.classList.toggle('show-extra');
+  });
   dom.layoutApply.addEventListener('click', () => {
     applyLayout(dom.layoutRows.map((i) => i.value.trim().toLowerCase()));
   });
@@ -457,7 +462,7 @@ function bindUi() {
   for (const e of [dom.mode, dom.stage, dom.lang, dom.showQwerty, dom.showFingers, dom.convert, dom.endless]) {
     e.addEventListener('change', () => e.blur());
   }
-  for (const e of [dom.restart, dom.layoutToggle]) {
+  for (const e of [dom.restart, dom.layoutToggle, dom.settingsToggle]) {
     e.addEventListener('click', () => e.blur());
   }
 }
@@ -508,7 +513,19 @@ function onKeyDown(e) {
 
 function init() {
   state.layout = createLayout(state.settings.layoutRows);
-  state.keyboard = createKeyboard(dom.keyboard, state.layout);
+  const compactQuery = window.matchMedia('(max-width: 720px)');
+  state.keyboard = createKeyboard(dom.keyboard, state.layout, {
+    compact: compactQuery.matches,
+    // 画面キーボードのクリック/タップ入力。表示している配列の文字がそのまま入る
+    onInput: ({ char, key }) => {
+      if (!dom.result.hidden) return;
+      handleChar(char, key);
+    },
+  });
+  compactQuery.addEventListener('change', (e) => {
+    state.keyboard.setCompact(e.matches);
+    renderAll();
+  });
   state.sounds = createSounds(state.settings.volume / 100);
   for (const s of STAGES) {
     const o = document.createElement('option');

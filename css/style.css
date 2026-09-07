@@ -30,6 +30,7 @@
 html, body { margin: 0; padding: 0; }
 
 body {
+  touch-action: manipulation; /* ダブルタップ拡大を防ぐ */
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
@@ -211,6 +212,8 @@ main {
 .kb-row { display: flex; gap: var(--gap); }
 .key {
   --w: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   position: relative;
   width: calc(var(--u) * var(--w) - var(--gap));
   height: calc(var(--u) - var(--gap));
@@ -254,6 +257,8 @@ main {
 }
 .key.ghost { background: transparent; color: transparent; box-shadow: none; border: 1px dashed var(--border); }
 .key.mod, .key.space { background: #242a3f; color: var(--muted); }
+.key.mod.armed { background: var(--accent-2); color: #0b1220; }
+.key.ghost { cursor: default; }
 .key.home-bump::after {
   content: "";
   position: absolute;
@@ -373,9 +378,43 @@ kbd {
 }
 .app-footer a { color: var(--muted); }
 
+/* ---- スマホ ---- */
+.mobile-only { display: none; }
+
 @media (max-width: 720px) {
-  .app-header { padding: 10px 12px 8px; }
-  main { padding: 10px 10px 6px; }
+  .mobile-only { display: inline-block; }
+  .desktop-only { display: none; }
+  .app-header { padding: 8px 10px 8px; }
+  h1 { font-size: 1.1rem; }
+  h1 .sub { display: block; margin: 2px 0 0; font-size: 0.72rem; }
+  .controls { gap: 8px 10px; font-size: 0.85rem; }
+  .controls .spacer { display: none; }
+  .controls .extra { display: none; }
+  .controls.show-extra .extra { display: inline-flex; }
+  .controls.show-extra .extra.ghost-btn { display: inline-block; }
+  main { padding: 10px 8px 6px; gap: 10px; }
+  .stat-row { gap: 4px 14px; font-size: 0.8rem; }
+  .text { min-height: 6rem; padding: 12px 14px; border-radius: 10px; }
+  .ja-display { font-size: 1.15rem; }
+  .ja-kana { font-size: 0.9rem; }
+  .line { font-size: 1.15rem; line-height: 1.6; }
   .result-grid { grid-template-columns: repeat(2, 1fr); }
   .hint { font-size: 0.75rem; }
+  .app-footer { padding: 4px; }
 }
+
+/* コンパクト配列（ダミーキーなし・Shift は最下段）。幅は画面いっぱいに */
+.keyboard.compact {
+  --u: calc((100vw - 22px) / 11.1);
+  --gap: calc(var(--u) * 0.1);
+  width: 100%;
+  padding: calc(var(--u) * 0.28) calc(var(--u) * 0.2);
+  border-radius: 10px;
+}
+.keyboard.compact .key {
+  height: calc(var(--u) * 1.35 - var(--gap));
+  font-size: calc(var(--u) * 0.48);
+}
+.keyboard.compact .key .qwerty { font-size: max(9px, calc(var(--u) * 0.2)); }
+.keyboard.compact .key .shifted { font-size: max(9px, calc(var(--u) * 0.22)); }
+.keyboard.compact .key.mod, .keyboard.compact .key.space { font-size: max(11px, calc(var(--u) * 0.28)); }

@@ -1,4 +1,5 @@
 // 画面上のキーボード描画とハイライト。DOM 操作はこのモジュールに閉じる。
+// クリック/タップでの入力も受け付け、onInput({ char, key }) で通知する。
 
 // 見た目を整えるためのダミーキー（入力対象外）。幅は u 単位。
 const GHOST_LEFT = [['Tab', 1.5], ['Caps', 1.75], null];
@@ -9,6 +10,9 @@ const GHOST_RIGHT = [
 ];
 const SHIFT_W = { left: 2.25, right: 2.75 };
 const BOTTOM_ROW = [['Ctrl', 1.25], ['Win', 1.25], ['Alt', 1.25], ['Space', 6.25], ['Alt', 1.25], ['Fn', 1.25], ['Menu', 1.25], ['Ctrl', 1.25]];
+// スマホ向けコンパクト表示: ダミーキーなし、段ずれ控えめ、Shift は最下段
+const COMPACT_ROW_OFFSET = [0, 0.25, 0.5];
+const COMPACT_BOTTOM = { shift: 2.25, space: 6 };
 const HOME_BUMP_COLS = [3, 6];
 const FLASH_MS = 140;
 
@@ -19,61 +23,97 @@ function el(tag, className, text) {
   return e;
 }
 
-function ghostKey(label, w) {
-  const k = el('div', 'key ghost', label);
+function sizedKey(label, w, className) {
+  const k = el('div', `key ${className}`, label);
   k.style.setProperty('--w', w);
   return k;
 }
 
-export function createKeyboard(container, initialLayout) {
+export function createKeyboard(container, initialLayout, { compact = false, onInput = null } = {}) {
   let layout = initialLayout;
+  let isCompact = compact;
   let keyEls = new Map(); // code -> element
   let shiftEls = { left: null, right: null };
   let spaceEl = null;
   let nextEls = [];
+  let shiftArmed = false; // 画面上の Shift をタップした直後（次の1キーだけ Shift 面）
+
+  function layoutKey(key, rowIdx) {
+    const k = el('div', 'key');
+    k.dataset.code = key.code;
+    k.dataset.finger = key.finger;
+    const isLetter = /[a-z]/.test(key.char);
+    k.appendChild(el('span', 'main', isLetter ? key.char.toUpperCase() : key.char));
+    if (!isLetter) k.appendChild(el('span', 'shifted', key.shifted));
+    k.appendChild(el('span', 'qwerty', key.qwerty));
+    if (rowIdx === 1 && HOME_BUMP_COLS.includes(key.col)) k.classList.add('home-bump');
+    k.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      emit(shiftArmed ? key.shifted : key.char, key);
+    });
+    keyEls.set(key.code, k);
+    return k;
+  }
+
+  function shiftKey(side) {
+    const k = sizedKey('Shift', isCompact ? COMPACT_BOTTOM.shift : SHIFT_W[side], 'mod shift');
+    k.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      setShiftArmed(!shiftArmed);
+    });
+    shiftEls[side] = k;
+    return k;
+  }
+
+  function spaceKey(w) {
+    const k = sizedKey('Space', w, 'space');
+    k.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      emit(' ', null);
+    });
+    spaceEl = k;
+    return k;
+  }
+
+  function emit(char, key) {
+    setShiftArmed(false);
+    if (onInput) onInput({ char, key });
+  }
+
+  function setShiftArmed(v) {
+    shiftArmed = v;
+    for (const s of Object.values(shiftEls)) s?.classList.toggle('armed', v);
+  }
 
   function render() {
     container.innerHTML = '';
+    container.classList.toggle('compact', isCompact);
     keyEls = new Map();
+    shiftArmed = false;
     layout.rows.forEach((_, r) => {
       const row = el('div', 'kb-row');
-      if (GHOST_LEFT[r]) row.appendChild(ghostKey(...GHOST_LEFT[r]));
-      if (r === 2) {
-        shiftEls.left = ghostKey('Shift', SHIFT_W.left);
-        shiftEls.left.classList.remove('ghost');
-        shiftEls.left.classList.add('mod');
-        row.appendChild(shiftEls.left);
+      if (isCompact) {
+        row.style.marginLeft = `calc(var(--u) * ${COMPACT_ROW_OFFSET[r]})`;
+      } else {
+        if (GHOST_LEFT[r]) row.appendChild(sizedKey(...GHOST_LEFT[r], 'ghost'));
+        if (r === 2) row.appendChild(shiftKey('left'));
       }
-      for (const key of layout.keys.filter((k) => k.row === r)) {
-        const k = el('div', 'key');
-        k.dataset.code = key.code;
-        k.dataset.finger = key.finger;
-        const isLetter = /[a-z]/.test(key.char);
-        k.appendChild(el('span', 'main', isLetter ? key.char.toUpperCase() : key.char));
-        if (!isLetter) k.appendChild(el('span', 'shifted', key.shifted));
-        k.appendChild(el('span', 'qwerty', key.qwerty));
-        if (r === 1 && HOME_BUMP_COLS.includes(key.col)) k.classList.add('home-bump');
-        keyEls.set(key.code, k);
-        row.appendChild(k);
-      }
-      for (const g of GHOST_RIGHT[r]) row.appendChild(ghostKey(...g));
-      if (r === 2) {
-        shiftEls.right = ghostKey('Shift', SHIFT_W.right);
-        shiftEls.right.classList.remove('ghost');
-        shiftEls.right.classList.add('mod');
-        row.appendChild(shiftEls.right);
+      for (const key of layout.keys.filter((k) => k.row === r)) row.appendChild(layoutKey(key, r));
+      if (!isCompact) {
+        for (const g of GHOST_RIGHT[r]) row.appendChild(sizedKey(...g, 'ghost'));
+        if (r === 2) row.appendChild(shiftKey('right'));
       }
       container.appendChild(row);
     });
     const bottom = el('div', 'kb-row');
-    for (const [label, w] of BOTTOM_ROW) {
-      const k = ghostKey(label, w);
-      if (label === 'Space') {
-        k.classList.remove('ghost');
-        k.classList.add('space');
-        spaceEl = k;
+    if (isCompact) {
+      bottom.appendChild(shiftKey('left'));
+      bottom.appendChild(spaceKey(COMPACT_BOTTOM.space));
+      bottom.appendChild(shiftKey('right'));
+    } else {
+      for (const [label, w] of BOTTOM_ROW) {
+        bottom.appendChild(label === 'Space' ? spaceKey(w) : sizedKey(label, w, 'ghost'));
       }
-      bottom.appendChild(k);
     }
     container.appendChild(bottom);
   }
@@ -126,6 +166,13 @@ export function createKeyboard(container, initialLayout) {
     render();
   }
 
+  function setCompact(v) {
+    if (v === isCompact) return;
+    isCompact = v;
+    render();
+  }
+
+  container.addEventListener('contextmenu', (e) => e.preventDefault()); // 長押しメニューを出さない
   render();
-  return { highlightNext, flash, setOptions, setLayout };
+  return { highlightNext, flash, setOptions, setLayout, setCompact };
 }
